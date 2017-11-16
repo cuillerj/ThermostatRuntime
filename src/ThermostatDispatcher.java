@@ -15,14 +15,48 @@ final class ThermostatDispatcher {
 	public static boolean response=false;
 	public static boolean toAck=true;
 	public static boolean noAck=false;
-	public static byte respTime=0x01;
-	public static byte respExtTemp=0x02;
+	
+	/*
+	 * output
+	 */
+	public static final byte respTime=0x01;
+	public static final byte respExtTemp=0x02;
+
+	public static final byte statusRequest=0x01;
+
+	public static final byte temperatureListRequest =0x03;
+	public static final byte registerRequest =0x04;
+	public static final byte registersRequest =0x05;
+	public static final byte unitaryScheduleRequest =0x06;
+
+	public static final byte setModeRequest = 0x07;
+	public static final byte setInstructionRequest = 0x08;
+	public static final byte setSecurityRequest=0x09;
+	public static final byte setTemporarilyHoldRequest=0x0a;
+	public static final byte updateTemperatureRequest =0x0b;
+	public static final byte updateRegisterRequest =0x0c;
+	public static final byte updateSchedulRequest =0x0d;
+	public static final byte writeEepromRequest=0x0e;
+	/*
+	 * input
+	 */
+	public static final byte timeUpdateRequest=respTime;
+	public static final byte extTempUpdateRequest=respExtTemp;
+	
+	public static final byte statusResponse =statusRequest|0x10;
+	public static final byte unitaryScheduleResponse= unitaryScheduleRequest|0x10;
+	public static final byte temperatureListResponse =temperatureListRequest|0x10;
+	public static final byte registersResponse =registersRequest|0x10;
+
+	
+	
 	public static int[] meteoValue=new int[255]; 
 	public static boolean[] meteoFlag=new boolean[255]; 
 	public static int nonDefinedExtTemp = -9999;
 	static int currentSentFrameNumber=0;
 	static int inHeaderLen=6;
 	static int outHeaderLen=8;
+	public static int commandListenIPPort = 0;
 	public static void main(String args[]) throws Exception
 	{  
 		System.out.println("ThermostatDispatcher 1.0");
@@ -35,8 +69,10 @@ final class ThermostatDispatcher {
 		if (args.length > 0) {
 		    try {
 		    	listenIPPort = Integer.parseInt(args[0]);
+		    	commandListenIPPort = Integer.parseInt(args[1]);
 		    } catch (NumberFormatException e) {
 		        System.err.println("listenIPPort" + args[0] + " must be an integer.");
+		        System.err.println("commandListenIPPort" + args[1] + " must be an integer.");
 		        System.exit(1);
 		    }
 		}
@@ -46,8 +82,10 @@ final class ThermostatDispatcher {
 			meteoFlag[i]=false;
 		}
 		DatagramSocket serverSocket = new DatagramSocket(listenIPPort); 
-//		KeepUpToDateMeteo meteo = new KeepUpToDateMeteo(5);
-//		meteo.start();
+		UpdateDatabase database = new UpdateDatabase();
+		database.start();
+		CommandServer commandServer = new CommandServer();
+		commandServer.start();
 		while(running)
 		{
 			byte[] receiveData = new byte[1024];
@@ -67,32 +105,65 @@ final class ThermostatDispatcher {
 					System.out.print("0x"+byteToHex(newFrame.data[i])+"-");
 					}
 				System.out.println();
-				System.out.println(" group " + newFrame.unitGroup()+" Id "+newFrame.unitId() +" data0:"+newFrame.data[0]);
+				System.out.println(" group " + newFrame.unitGroup()+" Id "+newFrame.unitId() +" data0:"+newFrame.data[0]+" cmd:"+newFrame.data[3]);
 				if(!meteoFlag[newFrame.unitGroup()])
 				{
-					meteoFlag[newFrame.unitGroup()]=true;
 					KeepUpToDateMeteo meteo = new KeepUpToDateMeteo(newFrame.unitGroup());
 					meteo.start();
+
 				}
 				byte command=newFrame.command();
-				System.out.println(" cmd:" + command);			
-				switch (command)
-				{
-					case 0x01:  // request time
+				if(newFrame.request()){					
+					System.out.println(" cmd:" + command);			
+					switch (command)
 					{
-						SendFrame send = new SendFrame();
-						send.SendTime(IPSource,IPport);
-						break;
-					}
-					case 0x02:  // request ext temp
-					{
-						if(meteoFlag[newFrame.unitGroup()] && meteoValue[newFrame.unitGroup()]!=nonDefinedExtTemp)
+						case timeUpdateRequest:  // request time
 						{
 							SendFrame send = new SendFrame();
-							send.SendExtTemp(IPSource,IPport,newFrame.unitGroup());							
+							send.SendTime(IPSource,IPport);
+							break;
 						}
+						case extTempUpdateRequest:  // request ext temp
+						{
+							if(meteoFlag[newFrame.unitGroup()] && meteoValue[newFrame.unitGroup()]!=nonDefinedExtTemp)
+							{
+								SendFrame send = new SendFrame();
+								send.SendExtTemp(IPSource,IPport,newFrame.unitGroup());							
+							}
+	
+							break;
+						}
+					}
+				}
+				else {
+					System.out.println(" resp:" + command);		
+					switch (command)
+					{
+						case statusResponse:  // request time
+						{
+							System.out.println(" status");
+							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
+							break;
+						}
+						case temperatureListResponse:  // 
+						{
+							System.out.println(" temperatures");
+							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
+							break;
+						}
+						case registersResponse:  // 
+						{
+							System.out.println(" registersResponse");
+							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
+							break;
+						}
+						case unitaryScheduleResponse:  // 
+						{
+							System.out.println(" unitaryScheduleResponse");
+							database.InsertIndicator(newFrame.stationId(),newFrame.command(),newFrame.data());
+							break;
+						}	
 
-						break;
 					}
 				}
 			}
@@ -138,11 +209,12 @@ final class ThermostatDispatcher {
 		public byte dataLen() {return dataLen;}
 		public byte unitGroup() {return unitGroup;}
 		public byte unitId() {return unitId;}
-		public byte command() {return (byte) (command&0xcf);}
+		public byte command() {return command;}
 		public byte[] data() {return data;}
 		public boolean toAcknoledge() {return (requestResponse&0x40)==0x40;}
 		public boolean request() {return (requestResponse&0x80)==0x80;}
 		public boolean response() {return (requestResponse&0x80)==0x00;}
+		public int stationId() {return (unitGroup*256+unitId);}
 	}
 	static class FrameOutAck{
 		byte frameFlag;

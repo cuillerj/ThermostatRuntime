@@ -123,6 +123,34 @@ public class SendFrame extends Thread{
 		}
 		clientSocket.close();
 	}
+	public  void SendExtCommand (InetAddress IPAddress, int IPport,byte command,byte data[]) 
+	{
+		System.out.println(" send command to" + IPAddress+ " len:"+data.length);
+		DatagramSocket clientSocket = null;
+		try {
+			clientSocket = new DatagramSocket();
+		} catch (SocketException e1) {
+		// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		int dLen=data.length;
+
+		ThermostatDispatcher.FrameOut newFrame = new ThermostatDispatcher.FrameOut();
+		byte[] dataToSend =  newFrame.BuildFrameOut(ThermostatDispatcher.request,ThermostatDispatcher.toAck, command,data, dLen) ;
+		DatagramPacket sendPacket2 = new DatagramPacket(dataToSend, newFrame.FrameOutLen(), IPAddress, IPport);
+		try {
+			clientSocket.send(sendPacket2);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		clientSocket.close();
+	}
 	public static void AcknoledgeFrame(InetAddress IPAddress,int IPport, byte frameNumber, byte command)
 	{
 		System.out.println(IPAddress);

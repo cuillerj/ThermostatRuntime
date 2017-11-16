@@ -1,4 +1,6 @@
-
+/*
+ * a ajouter un test fraicheur des data via recid
+ */
  
 	import java.io.*; 
 import java.sql.Connection;
@@ -46,6 +48,7 @@ public class KeepUpToDateMeteo extends Thread{
 				String tempSign=rs1.getString("tempSign");
 				recFound=true;
 				System.out.println("Meteo Station: "+ meteoId+":"+ThermostatDispatcher.meteoValue[meteoId]);
+				ThermostatDispatcher.meteoFlag[meteoId]=true;
 					}
 			if (!recFound)
 			{
