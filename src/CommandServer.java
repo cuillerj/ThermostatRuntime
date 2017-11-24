@@ -26,12 +26,14 @@ public class CommandServer extends Thread{
 	final byte byte3=ThermostatDispatcher.padByte;	
 	final byte separator=0x2f;
 	final byte equalChar=0x3a;
-	final byte commandNumber=8;
+	final byte commandNumber=12;
 	final String[] commandS = new String[commandNumber];
-	final byte[] commandB={ThermostatDispatcher.setModeRequest,ThermostatDispatcher.setInstructionRequest,ThermostatDispatcher.setSecurityRequest,
-			ThermostatDispatcher.updateTemperatureRequest,ThermostatDispatcher.updateRegisterRequest,ThermostatDispatcher.updateSchedulRequest,ThermostatDispatcher.writeEepromRequest,ThermostatDispatcher.setTemporarilyHoldRequest};
-	final int[] paramNumber={1,1,1,2,2,2,1,1};  
-	final int[] paramLen={1,1,1,2,2,2,1,1};
+	final static byte[] commandB={ThermostatDispatcher.setModeRequest,ThermostatDispatcher.setInstructionRequest,ThermostatDispatcher.setSecurityRequest,
+			ThermostatDispatcher.updateTemperatureRequest,ThermostatDispatcher.updateRegisterRequest,ThermostatDispatcher.updateSchedulRequest,
+			ThermostatDispatcher.writeEepromRequest,ThermostatDispatcher.setTemporarilyHoldRequest,ThermostatDispatcher.uploadScheduleRequest,
+			ThermostatDispatcher.uploadTemperatures,ThermostatDispatcher.uploadRegisters,ThermostatDispatcher.tracePIDRequest};
+	final static int[] paramNumber={1,1,1,2,2,2,1,1,0,0,0,1};  
+	final int[] paramLen={1,1,1,2,2,2,1,1,0,0,0,1};
 
 public void run(){
 	commandS[0]="setMode";
@@ -42,7 +44,11 @@ public void run(){
 	commandS[5]="updateSchedul";
 	commandS[6]="writeEeprom";
 	commandS[7]="temporarilyHold";
-	System.out.println("CommandServer 1.0");
+	commandS[8]="uploadSchedule";
+	commandS[9]="uploadTemperatures";
+	commandS[10]="uploadRegisters";
+	commandS[11]="tracePID";
+	System.out.println("CommandServer V1.0");
 		DatagramSocket serverSocket = null;
 		try {
 			serverSocket = new DatagramSocket(ThermostatDispatcher.commandListenIPPort);
@@ -135,6 +141,13 @@ public void run(){
 					}
 					if (cmdIdx!=-1)    // if command is defined
 					{
+						if(paramNumber[cmdIdx]==0) // if only one parameter
+						{	
+								byte[] dataB = new byte[6];					
+						   	    InetAddress IPAddress = InetAddress.getByName(GetStationIPAddress(st_id));
+								SendFrame sendCmd = new SendFrame();
+								sendCmd.SendExtCommand(IPAddress, GetStationIPPort(st_id),cmdB,dataB);								
+						}
 						if(paramNumber[cmdIdx]==1) // if only one parameter
 						{	
 							int value=0;
@@ -211,6 +224,9 @@ public void run(){
 							sendCmd.SendExtCommand(IPAddress, GetStationIPPort(st_id),cmdB,dataB);	
 						}
 					}
+					else{
+						System.out.println(" unknown command");
+					}
 				
 				}				
 			}
@@ -247,7 +263,7 @@ public boolean CheckInputFrame(byte[]data)
 	return true;
 	
 }
-public String GetStationIPAddress(int st_ID)
+public static String GetStationIPAddress(int st_ID)
 {
 	Statement stmtS = null;
 	ResultSet rs = null;
@@ -279,7 +295,7 @@ try {
 return st_ip;
 }
 
-public int GetStationIPPort(int st_ID)
+public static int GetStationIPPort(int st_ID)
 {
 	Statement stmtS = null;
 	ResultSet rs = null;

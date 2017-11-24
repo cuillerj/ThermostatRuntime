@@ -20,7 +20,7 @@ public class KeepUpToDateMeteo extends Thread{
 	
 	public void run() 
 	{
-		System.out.println("KeepUpToDateMeteo V0.1");
+		System.out.println("KeepUpToDateMeteo V1.0");
 		
 		while(true)
 		{

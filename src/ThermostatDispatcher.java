@@ -37,29 +37,34 @@ final class ThermostatDispatcher {
 	public static final byte updateRegisterRequest =0x0c;
 	public static final byte updateSchedulRequest =0x0d;
 	public static final byte writeEepromRequest=0x0e;
+	public static final byte uploadScheduleRequest=0x0f;
+	public static final byte uploadTemperatures=0x10;
+	public static final byte uploadRegisters=0x11;
+	public static final byte tracePIDRequest=0x12;
 	/*
 	 * input
 	 */
 	public static final byte timeUpdateRequest=respTime;
 	public static final byte extTempUpdateRequest=respExtTemp;
-	
 	public static final byte statusResponse =statusRequest|0x10;
 	public static final byte unitaryScheduleResponse= unitaryScheduleRequest|0x10;
 	public static final byte temperatureListResponse =temperatureListRequest|0x10;
 	public static final byte registersResponse =registersRequest|0x10;
-
-	
-	
+	public static final byte sendPIDResponse =tracePIDRequest|0x10;
 	public static int[] meteoValue=new int[255]; 
-	public static boolean[] meteoFlag=new boolean[255]; 
+	public static final int maximumNumberOfGroup=255;
+	public static boolean[] meteoFlag=new boolean[maximumNumberOfGroup];
+	public static final int maximumNumberOfStation=9999;
+	public static boolean[] upToDateFlag=new boolean[9999]; 
 	public static int nonDefinedExtTemp = -9999;
+	public static int firstScheduleIndicatorPosition=50;
 	static int currentSentFrameNumber=0;
 	static int inHeaderLen=6;
 	static int outHeaderLen=8;
 	public static int commandListenIPPort = 0;
 	public static void main(String args[]) throws Exception
 	{  
-		System.out.println("ThermostatDispatcher 1.0");
+		System.out.println("ThermostatDispatcher V1.0");
 		boolean running=true;
 		int listenIPPort = 0;
 
@@ -80,6 +85,7 @@ final class ThermostatDispatcher {
 		for (i=0;i<255;i++)
 		{
 			meteoFlag[i]=false;
+			upToDateFlag[i]=false;
 		}
 		DatagramSocket serverSocket = new DatagramSocket(listenIPPort); 
 		UpdateDatabase database = new UpdateDatabase();
@@ -93,18 +99,20 @@ final class ThermostatDispatcher {
 			serverSocket.receive(receivePacket);
 			InetAddress IPSource = receivePacket.getAddress();
 			int IPport = receivePacket.getPort();
-			System.out.println("receive from:"+IPSource+":"+IPport);
+			System.out.print("receive from:"+IPSource+":"+IPport);
 			ThermostatDispatcher.FrameIn newFrame = new FrameIn(receiveData);
-			System.out.println(newFrame.toAcknoledge());
+			System.out.println(" toAck:"+newFrame.toAcknoledge());
 			if (newFrame.isGoodFrame){	
 				if  (newFrame.toAcknoledge()){
 					SendFrame.AcknoledgeFrame(IPSource,IPport,newFrame.frameNumber(),newFrame.command());
-				}				
+				}
+				/*
 				for (i=0;i<newFrame.frameLen;i++)
 					{
 					System.out.print("0x"+byteToHex(newFrame.data[i])+"-");
 					}
 				System.out.println();
+				*/
 				System.out.println(" group " + newFrame.unitGroup()+" Id "+newFrame.unitId() +" data0:"+newFrame.data[0]+" cmd:"+newFrame.data[3]);
 				if(!meteoFlag[newFrame.unitGroup()])
 				{
@@ -114,7 +122,7 @@ final class ThermostatDispatcher {
 				}
 				byte command=newFrame.command();
 				if(newFrame.request()){					
-					System.out.println(" cmd:" + command);			
+					System.out.println(" request:" + command);			
 					switch (command)
 					{
 						case timeUpdateRequest:  // request time
@@ -136,9 +144,10 @@ final class ThermostatDispatcher {
 					}
 				}
 				else {
-					System.out.println(" resp:" + command);		
+					System.out.println(" response:" + command);		
 					switch (command)
 					{
+	
 						case statusResponse:  // request time
 						{
 							System.out.println(" status");
@@ -160,10 +169,16 @@ final class ThermostatDispatcher {
 						case unitaryScheduleResponse:  // 
 						{
 							System.out.println(" unitaryScheduleResponse");
-							database.InsertIndicator(newFrame.stationId(),newFrame.command(),newFrame.data());
+							int shift=firstScheduleIndicatorPosition;
+							database.InsertIndicator(newFrame.stationId(),newFrame.command(),shift,newFrame.data());
 							break;
 						}	
-
+						case sendPIDResponse:  // 
+						{
+							System.out.println(" PID data");
+							database.InsertPID(newFrame.stationId(),newFrame.data());
+							break;
+						}	
 					}
 				}
 			}
@@ -269,7 +284,7 @@ final class ThermostatDispatcher {
 				this.frameLen=dataLen+10;  // reserved for 0x00 +crc
 				System.arraycopy(outFrame, outHeaderLen-1, this.outData, 0, dataLen+1);
 				outFrame[frameLen-1]=Crc8(outData,dataLen+1);
-				System.out.println("Crc out:0x" +byteToHex(Crc8(outData,dataLen+1))+" datalen:"+dataLen);
+	//			System.out.println("Crc out:0x" +byteToHex(Crc8(outData,dataLen+1))+" datalen:"+dataLen);
 				return this.outFrame;
 		}
 		public int FrameOutLen()
@@ -296,7 +311,7 @@ final class ThermostatDispatcher {
 	    byte crc = 0x00;
 	    while (len-- > 0) {
 	        byte extract = (byte) stringData[i++];	        
-	        System.out.print("0x"+byteToHex(extract)+"-");
+//	        System.out.print("0x"+byteToHex(extract)+"-");
 	        for (byte tempI = 8; tempI != 0; tempI--) {
 	            byte sum = (byte) ((crc & 0xFF) ^ (extract & 0xFF));
 	            sum = (byte) ((sum & 0xFF) & 0x01); // I had Problems writing this as one line with previous
@@ -307,7 +322,7 @@ final class ThermostatDispatcher {
 	            extract = (byte) ((extract & 0xFF) >>> 1);
 	        }
 	    }
-	    System.out.println();
+	//    System.out.println();
 	    return (byte) (crc & 0xFF);
 	}
 
