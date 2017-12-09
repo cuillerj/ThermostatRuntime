@@ -15,7 +15,7 @@ final class ThermostatDispatcher {
 	public static boolean response=false;
 	public static boolean toAck=true;
 	public static boolean noAck=false;
-	
+	public static String pgm="ThermostatDispatcher";
 	/*
 	 * output
 	 */
@@ -41,6 +41,7 @@ final class ThermostatDispatcher {
 	public static final byte uploadTemperatures=0x10;
 	public static final byte uploadRegisters=0x11;
 	public static final byte tracePIDRequest=0x12;
+	public static final byte setInstruction=0x13;
 	/*
 	 * input
 	 */
@@ -64,7 +65,10 @@ final class ThermostatDispatcher {
 	public static int commandListenIPPort = 0;
 	public static void main(String args[]) throws Exception
 	{  
-		System.out.println("ThermostatDispatcher V1.0");
+		String message="";
+		TraceLog log = new TraceLog();
+		message="ThermostatDispatcher V1.0";
+		log.TraceLog(pgm,message);
 		boolean running=true;
 		int listenIPPort = 0;
 
@@ -75,6 +79,8 @@ final class ThermostatDispatcher {
 		    try {
 		    	listenIPPort = Integer.parseInt(args[0]);
 		    	commandListenIPPort = Integer.parseInt(args[1]);
+				message="Listen port:"+listenIPPort;
+				log.TraceLog(pgm,message);
 		    } catch (NumberFormatException e) {
 		        System.err.println("listenIPPort" + args[0] + " must be an integer.");
 		        System.err.println("commandListenIPPort" + args[1] + " must be an integer.");
@@ -91,6 +97,7 @@ final class ThermostatDispatcher {
 		UpdateDatabase database = new UpdateDatabase();
 		database.start();
 		CommandServer commandServer = new CommandServer();
+
 		commandServer.start();
 		while(running)
 		{
@@ -99,9 +106,10 @@ final class ThermostatDispatcher {
 			serverSocket.receive(receivePacket);
 			InetAddress IPSource = receivePacket.getAddress();
 			int IPport = receivePacket.getPort();
-			System.out.print("receive from:"+IPSource+":"+IPport);
+
 			ThermostatDispatcher.FrameIn newFrame = new FrameIn(receiveData);
-			System.out.println(" toAck:"+newFrame.toAcknoledge());
+			message="receive from:"+IPSource+":"+IPport+" toAck:"+newFrame.toAcknoledge();
+			log.TraceLog(pgm,message);
 			if (newFrame.isGoodFrame){	
 				if  (newFrame.toAcknoledge()){
 					SendFrame.AcknoledgeFrame(IPSource,IPport,newFrame.frameNumber(),newFrame.command());
@@ -113,7 +121,7 @@ final class ThermostatDispatcher {
 					}
 				System.out.println();
 				*/
-				System.out.println(" group " + newFrame.unitGroup()+" Id "+newFrame.unitId() +" data0:"+newFrame.data[0]+" cmd:"+newFrame.data[3]);
+	//			System.out.println(" group " + newFrame.unitGroup()+" Id "+newFrame.unitId() +" data0:"+newFrame.data[0]+" cmd:"+newFrame.data[3]);
 				if(!meteoFlag[newFrame.unitGroup()])
 				{
 					KeepUpToDateMeteo meteo = new KeepUpToDateMeteo(newFrame.unitGroup());
@@ -122,7 +130,7 @@ final class ThermostatDispatcher {
 				}
 				byte command=newFrame.command();
 				if(newFrame.request()){					
-					System.out.println(" request:" + command);			
+//					System.out.println(" request:" + command);			
 					switch (command)
 					{
 						case timeUpdateRequest:  // request time
@@ -144,38 +152,38 @@ final class ThermostatDispatcher {
 					}
 				}
 				else {
-					System.out.println(" response:" + command);		
+	//				System.out.println(" response:" + command);		
 					switch (command)
 					{
 	
 						case statusResponse:  // request time
 						{
-							System.out.println(" status");
+			//				System.out.println(" status");
 							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
 							break;
 						}
 						case temperatureListResponse:  // 
 						{
-							System.out.println(" temperatures");
+//							System.out.println(" temperatures");
 							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
 							break;
 						}
 						case registersResponse:  // 
 						{
-							System.out.println(" registersResponse");
+	//						System.out.println(" registersResponse");
 							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
 							break;
 						}
 						case unitaryScheduleResponse:  // 
 						{
-							System.out.println(" unitaryScheduleResponse");
+		//					System.out.println(" unitaryScheduleResponse");
 							int shift=firstScheduleIndicatorPosition;
 							database.InsertIndicator(newFrame.stationId(),newFrame.command(),shift,newFrame.data());
 							break;
 						}	
 						case sendPIDResponse:  // 
 						{
-							System.out.println(" PID data");
+	//						System.out.println(" PID data");
 							database.InsertPID(newFrame.stationId(),newFrame.data());
 							break;
 						}	
@@ -183,7 +191,9 @@ final class ThermostatDispatcher {
 				}
 			}
 			else{
-				System.out.println(" CRC error ");
+				message=" CRC error ";
+				log.TraceLog(pgm,message);
+
 			}
 		}
 		serverSocket.close();
@@ -258,6 +268,7 @@ final class ThermostatDispatcher {
 	}
 		public byte[] BuildFrameOut(boolean requestResponse,boolean toBeAck, byte command, byte inputdata[], int dataLen){
 				currentSentFrameNumber++;
+//				System.out.println(" build frame:"+currentSentFrameNumber);
 				System.arraycopy(inputdata, 0, outFrame, outHeaderLen, dataLen);
 				outFrame[0]=(byte) ((currentSentFrameNumber)%256);
 				outFrame[1]=padByte;
@@ -284,7 +295,7 @@ final class ThermostatDispatcher {
 				this.frameLen=dataLen+10;  // reserved for 0x00 +crc
 				System.arraycopy(outFrame, outHeaderLen-1, this.outData, 0, dataLen+1);
 				outFrame[frameLen-1]=Crc8(outData,dataLen+1);
-	//			System.out.println("Crc out:0x" +byteToHex(Crc8(outData,dataLen+1))+" datalen:"+dataLen);
+//				System.out.println("Crc out:0x" +byteToHex(Crc8(outData,dataLen+1))+" datalen:"+dataLen);
 				return this.outFrame;
 		}
 		public int FrameOutLen()

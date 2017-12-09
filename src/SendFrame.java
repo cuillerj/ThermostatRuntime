@@ -7,10 +7,14 @@ import java.text.DateFormat;
 import java.util.Locale;
 
 public class SendFrame extends Thread{
+	public static String pgm="SendFrame";
 	Thread t;
 	public  void SendTime (InetAddress IPAddress, int IPport) 
 	{
-		System.out.println(" send time to" + IPAddress);
+
+		TraceLog log = new TraceLog();
+		String message=" send time to" + IPAddress;
+		log.TraceLog(pgm,message);
 		Locale locale=Locale.FRENCH;
 		java.util.Date today = new java.util.Date();
 		DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.SHORT, locale);
@@ -87,7 +91,10 @@ public class SendFrame extends Thread{
 	}
 	public  void SendExtTemp (InetAddress IPAddress, int IPport,int meteoId) 
 	{
-		System.out.println(" send ext temp to" + IPAddress);
+//		System.out.println(" send ext temp to" + IPAddress);
+		TraceLog log = new TraceLog();
+		String message=" send ext temp to" + IPAddress;
+		log.TraceLog(pgm,message);
 		DatagramSocket clientSocket = null;
 		try {
 			clientSocket = new DatagramSocket();
@@ -125,12 +132,18 @@ public class SendFrame extends Thread{
 	}
 	public  void SendExtCommand (InetAddress IPAddress, int IPport,byte command,byte data[]) 
 	{
-		System.out.println(" send command to" + IPAddress+ " len:"+data.length);
+
+		TraceLog log = new TraceLog();
+		String message=" send command to" + IPAddress+ " len:"+data.length;
+		log.TraceLog(pgm,message);
 		DatagramSocket clientSocket = null;
 		try {
 			clientSocket = new DatagramSocket();
 		} catch (SocketException e1) {
 		// TODO Auto-generated catch block
+
+			message=" socket exception";
+			log.TraceLog(pgm,message);
 			e1.printStackTrace();
 		}
 		int dLen=data.length;
@@ -142,6 +155,8 @@ public class SendFrame extends Thread{
 			clientSocket.send(sendPacket2);
 		} catch (IOException e) {
 			e.printStackTrace();
+			message=" packet exception";
+			log.TraceLog(pgm,message);
 		}
 		try {
 			Thread.sleep(1000);
@@ -153,7 +168,6 @@ public class SendFrame extends Thread{
 	}
 	public static void AcknoledgeFrame(InetAddress IPAddress,int IPport, byte frameNumber, byte command)
 	{
-		System.out.println(IPAddress);
 		ThermostatDispatcher.FrameOutAck newFrame = new ThermostatDispatcher.FrameOutAck();
 		  byte[] dataToSend =  newFrame.BuildFrameOutAck(frameNumber, command) ;
 	      DatagramSocket clientSocket = null;

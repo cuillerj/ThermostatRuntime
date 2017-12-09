@@ -7,12 +7,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 public class UpdateDatabase extends Thread{
+	public static String pgm="UpdateDatabase";
 	public String connectionUrl = "jdbc:mysql://jserver:3306/domotiquedata";
 	public String connectionUser = "jean";
 	public String connectionPassword = "manu7890";
 	public Connection conn = null;
 	public UpdateDatabase() {
-
+	String message="";
 		try {
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			try {
@@ -20,7 +21,9 @@ public class UpdateDatabase extends Thread{
 	//			System.out.println("Database connexion Ok");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
-				System.out.println("Database connexion problem !");
+				TraceLog log = new TraceLog();
+				message="Database connexion problem !";
+				log.TraceLog(pgm,message);
 				e.printStackTrace();
 			}
 		}
@@ -33,7 +36,10 @@ public class UpdateDatabase extends Thread{
 
 	public void run() 
 	{
-		System.out.println("UpdateDatabase V1.0");
+		TraceLog log = new TraceLog();
+		String message="";
+		message="UpdateDatabase V1.0";
+		log.TraceLog(pgm,message);
 		while(true)
 		{
 			Thread.currentThread();
@@ -43,8 +49,7 @@ public class UpdateDatabase extends Thread{
 	{	
 		int IndValue=0;
 		String rule1="256*a+b";
-		System.out.println("1:"+stationId+" "+indType);
-
+		TraceLog log = new TraceLog();
 		try {
 			Statement stmtRead = conn.createStatement();
 			Statement stmtInsert = conn.createStatement();
@@ -73,7 +78,9 @@ public class UpdateDatabase extends Thread{
 					}
 					else 
 					{ 
-						System.out.println("unknown compute rule: "+IndComputeRule);
+
+						String message="unknown compute rule: "+IndComputeRule;
+						log.TraceLog(pgm,message);
 						IndValue=(byte)(data[i2+1]&0x7F)-(byte)(data[i2+1]&0x80); // pas de regle de calcule definie on prende le 2eme octet
 					}
 				}
@@ -83,11 +90,10 @@ public class UpdateDatabase extends Thread{
 					IndValue=oct0;
 				}				
 				String sql="INSERT INTO IndValue VALUES ("+stationId+","+IndValue+",now(),"+intIdI+")";
-				System.out.println("ind id "+IndIdS+", pos " + IndPos + ", len: " + IndLen+" value"+IndValue);
-				System.out.println(sql);
+//				System.out.println("ind id "+IndIdS+", pos " + IndPos + ", len: " + IndLen+" value"+IndValue);
+//				System.out.println(sql);
 				stmtInsert.executeUpdate(sql);
 			}	
-			System.out.println("close");
 			rs.close();
 			if (!ThermostatDispatcher.upToDateFlag[stationId] && stationId<=ThermostatDispatcher.maximumNumberOfStation)
 			{
@@ -103,10 +109,11 @@ public class UpdateDatabase extends Thread{
 	}
 	public  void InsertIndicator(int stationId, byte indType , int shiftPosition, byte[] data) 
 	{	
+		TraceLog log = new TraceLog();
 		int indId=(byte)(data[4]&0x7F)-(byte)(data[4]&0x80);
 		indId=indId+shiftPosition;
 		String rule1="256*a+b";
-		System.out.println("1:"+stationId+" "+indType+" id:"+indId);
+	//	System.out.println("1:"+stationId+" "+indType+" id:"+indId);
 		int IndValue=0;
 		try {
 			Statement stmtRead = conn.createStatement();
@@ -133,7 +140,8 @@ public class UpdateDatabase extends Thread{
 					}
 					else 
 					{ 
-						System.out.println("unknown compute rule: "+IndComputeRule);
+						String message="unknown compute rule: "+IndComputeRule;
+						log.TraceLog(pgm,message);
 						IndValue=(byte)(data[iPos+1]&0x7F)-(byte)(data[iPos+1]&0x80); // pas de regle de calcule definie on prende le 2eme octet
 					}
 				}
@@ -143,11 +151,12 @@ public class UpdateDatabase extends Thread{
 					IndValue=oct0;
 				}
 				String sql="INSERT INTO IndValue VALUES ("+stationId+","+IndValue+",now(),"+iId+")";
-				System.out.println("ind id "+IndIdS+", pos " + IndPos + ", len: " + IndLen+" value"+IndValue);
-				System.out.println(sql);
+
+	//			System.out.println("ind id "+IndIdS+", pos " + IndPos + ", len: " + IndLen+" value"+IndValue);
+	//			System.out.println(sql);
 				stmtInsert.executeUpdate(sql);
+				log.TraceLog(pgm,sql);
 			}	
-			System.out.println("close");
 			rs.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -159,7 +168,7 @@ public class UpdateDatabase extends Thread{
 public  void InsertPID(int stationId, byte[] data) 
 {	
 
-	System.out.println("1:"+stationId);
+//	System.out.println("1:"+stationId);
 	int iPos=4;
 	int relayStatus=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
 	iPos=6;

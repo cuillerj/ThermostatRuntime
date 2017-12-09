@@ -20,20 +20,21 @@ import java.sql.Statement;
  *  parameters value are binary converted 1 or 2 bytes according to paramLen (in case of 2 parameters the first one is converted 1 byte (must not exceeded 255) and second to paramLen-1 bytes
  */
 public class CommandServer extends Thread{
+	public static String pgm="CommandServer";
 	final byte byte0=0x01;
 	final byte byte1=ThermostatDispatcher.padByte;
 	final byte byte2=0x00;
 	final byte byte3=ThermostatDispatcher.padByte;	
 	final byte separator=0x2f;
 	final byte equalChar=0x3a;
-	final byte commandNumber=12;
+	final byte commandNumber=13;
 	final String[] commandS = new String[commandNumber];
 	final static byte[] commandB={ThermostatDispatcher.setModeRequest,ThermostatDispatcher.setInstructionRequest,ThermostatDispatcher.setSecurityRequest,
 			ThermostatDispatcher.updateTemperatureRequest,ThermostatDispatcher.updateRegisterRequest,ThermostatDispatcher.updateSchedulRequest,
 			ThermostatDispatcher.writeEepromRequest,ThermostatDispatcher.setTemporarilyHoldRequest,ThermostatDispatcher.uploadScheduleRequest,
-			ThermostatDispatcher.uploadTemperatures,ThermostatDispatcher.uploadRegisters,ThermostatDispatcher.tracePIDRequest};
-	final static int[] paramNumber={1,1,1,2,2,2,1,1,0,0,0,1};  
-	final int[] paramLen={1,1,1,2,2,2,1,1,0,0,0,1};
+			ThermostatDispatcher.uploadTemperatures,ThermostatDispatcher.uploadRegisters,ThermostatDispatcher.tracePIDRequest,ThermostatDispatcher.setInstruction};
+	final static int[] paramNumber={1,1,1,2,2,2,1,1,0,0,0,1,1};  
+	final int[] paramLen={1,1,1,2,2,2,1,1,0,0,0,1,1};
 
 public void run(){
 	commandS[0]="setMode";
@@ -48,11 +49,17 @@ public void run(){
 	commandS[9]="uploadTemperatures";
 	commandS[10]="uploadRegisters";
 	commandS[11]="tracePID";
-	System.out.println("CommandServer V1.0");
+	commandS[12]="setInstruction";
+	String message="";
+	message="CommandServer V1.0";
+	TraceLog log = new TraceLog();
+	log.TraceLog(pgm,message);
+//	System.out.println("CommandServer V1.0");
 		DatagramSocket serverSocket = null;
 		try {
 			serverSocket = new DatagramSocket(ThermostatDispatcher.commandListenIPPort);
-			System.out.println("Listen port:"+ThermostatDispatcher.commandListenIPPort);
+			message="Listen port:"+ThermostatDispatcher.commandListenIPPort;
+			log.TraceLog(pgm,message);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -60,17 +67,20 @@ public void run(){
 
 	while(true)
 	{
+	try{
 		byte[] receiveData = new byte[1024];
 		DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 		try {
 			serverSocket.receive(receivePacket);
 			int i=0;
+			/*
 			for (i=0;i<receiveData.length;i++)
 			{
 				System.out.print(byteToHex(receiveData[i])+" ");
 			}
 			System.out.println();
 			System.out.println("check:"+CheckInputFrame(receiveData));
+			*/
 			byte[] inData = new byte[512];
 			int startIdx=6;
 			i=0;
@@ -102,10 +112,10 @@ public void run(){
 					while(receiveData[i+startIdx]!=separator && i< receiveData.length)
 					{
 						inData[i]=(byte) (receiveData[i+startIdx]);
-						System.out.print(" "+i+">"+byteToHex(inData[i]));
+	//					System.out.print(" "+i+">"+byteToHex(inData[i]));
 						i++;
 					}
-					System.out.println(i);
+	//				System.out.println(i);
 					int cmdLen=i;
 					byte[] cmd = new byte[cmdLen];
 					System.arraycopy(inData, 0, cmd, 0, cmdLen);
@@ -116,16 +126,18 @@ public void run(){
 					while(receiveData[i+startIdx]!=separator && i< receiveData.length)
 					{
 						inData[i]=(byte) (receiveData[i+startIdx]);
-						System.out.print(" "+i+">"+byteToHex(inData[i]));
+//						System.out.print(" "+i+">"+byteToHex(inData[i]));
 						i++;
 					}
-					System.out.println(i);
+//					System.out.println(i);
 					int dataLen=i;
 					byte[] data = new byte[dataLen];
 					System.arraycopy(inData, 0, data, 0, dataLen);
 					String datas = new String(data, "UTF-8"); // for UTF-8 encoding
-					System.out.println("dest station:"+st_id+" "+GetStationIPAddress(st_id)+"/"+GetStationIPPort(st_id));
-					System.out.println("cmd:"+command+" len:"+cmd.length+ " data:"+datas+" datalen"+data.length);
+					message="dest station:"+st_id+" "+GetStationIPAddress(st_id)+"/"+GetStationIPPort(st_id);
+					log.TraceLog(pgm,message);
+					message="cmd:"+command+" len:"+cmd.length+ " data:"+datas+" datalen"+data.length;
+					log.TraceLog(pgm,message);
 					int j=0;
 
 					// decode command
@@ -155,7 +167,7 @@ public void run(){
 							{
 								value=value+(int) ((data[j]-0x30)*Math.pow(10, dataLen-j-1));
 							}
-							System.out.println("value:"+value);
+
 								byte[] dataB = new byte[paramLen[cmdIdx]];					
 								if(paramLen[cmdIdx]==1)    // if value to code with one byte
 								{
@@ -225,7 +237,9 @@ public void run(){
 						}
 					}
 					else{
-						System.out.println(" unknown command");
+						message=" unknown command";
+						log.TraceLog(pgm,message);
+
 					}
 				
 				}				
@@ -235,6 +249,8 @@ public void run(){
 			e.printStackTrace();
 		}
 	}
+	
+	finally{}}
 }
 
 public boolean CheckInputFrame(byte[]data)
@@ -282,8 +298,6 @@ try {
 		st_ip= rs.getString("st_ip");
 	//	System.out.print("IP: " + st_ip);
 	}
-
-	System.out.println();
 	rs.close();
 
 	} catch (Exception e) {
@@ -316,8 +330,6 @@ try {
 		udpPort = rs.getInt("st_listen_udp");
 //		System.out.print("IP port:"+udpPort);
 	}
-
-	System.out.println();
 	rs.close();
 
 	} catch (Exception e) {

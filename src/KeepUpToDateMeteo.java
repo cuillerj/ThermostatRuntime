@@ -12,6 +12,7 @@ import java.net.*;
 import java.sql.*;
 
 public class KeepUpToDateMeteo extends Thread{
+		public static String pgm="KeepUpToDateMeteo";
 		public int meteoId;
 		public KeepUpToDateMeteo(int meteoID) {
 	       meteoId = meteoID;
@@ -20,7 +21,9 @@ public class KeepUpToDateMeteo extends Thread{
 	
 	public void run() 
 	{
-		System.out.println("KeepUpToDateMeteo V1.0");
+		TraceLog log = new TraceLog();
+		String message="KeepUpToDateMeteo V1.0";
+		log.TraceLog(pgm,message);
 		
 		while(true)
 		{
@@ -47,7 +50,8 @@ public class KeepUpToDateMeteo extends Thread{
 				ThermostatDispatcher.meteoValue[meteoId]=rs1.getInt("temp");
 				String tempSign=rs1.getString("tempSign");
 				recFound=true;
-				System.out.println("Meteo Station: "+ meteoId+":"+ThermostatDispatcher.meteoValue[meteoId]);
+				message="Meteo Station: "+ meteoId+":"+ThermostatDispatcher.meteoValue[meteoId];
+				log.TraceLog(pgm,message);
 				ThermostatDispatcher.meteoFlag[meteoId]=true;
 					}
 			if (!recFound)

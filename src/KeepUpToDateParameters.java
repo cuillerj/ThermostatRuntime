@@ -8,6 +8,7 @@ import java.sql.Statement;
 
 
 public class KeepUpToDateParameters extends Thread{
+	public static String pgm="KeepUpToDateParameters";
 	public String connectionUrl = "jdbc:mysql://jserver:3306/domotiquedata";
 	public String connectionUser = "jean";
 	public String connectionPassword = "manu7890";
@@ -21,26 +22,31 @@ public class KeepUpToDateParameters extends Thread{
 	
 	public void run() 
 	{
-		while(true)
-		{
-
+		TraceLog log = new TraceLog();
+		String message="";
 		Thread.currentThread();
 
 		try {
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			try {
 				conn = DriverManager.getConnection(connectionUrl, connectionUser, connectionPassword);
-				System.out.println("start KeepUpToDateParameters v1.0 for station :"+STID);
+				message="start KeepUpToDateParameters v1.0 for station :"+STID;
+				log.TraceLog(pgm,message);
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
-				System.out.println("Database connexion problem !");
+				message="Database connexion problem !";
+				log.TraceLog(pgm,message);
 				e.printStackTrace();
 			}
 		}
 	 catch (Exception e) {
 
 		e.printStackTrace();
-	} 
+	} 		
+		while(true)
+		{
+
+
 		try {
 		    java.util.Date today = new java.util.Date();
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
@@ -72,8 +78,9 @@ public class KeepUpToDateParameters extends Thread{
 	
 						if (IndTarget != IndValue)
 						{
-							System.out.println(today+" maj a faire station:"+STID+" indicateur "+IndIdS+ " valeur:"+IndValue +" target:"+IndTarget+" IndRef"+IndRef+" IndRefType"+IndRefType);
-							String message="";	
+		//					System.out.println(today+" maj a faire station:"+STID+" indicateur "+IndIdS+ " valeur:"+IndValue +" target:"+IndTarget+" IndRef"+IndRef+" IndRefType"+IndRefType);
+						    message=today+" maj a faire station:"+STID+" indicateur "+IndIdS+ " valeur:"+IndValue +" target:"+IndTarget+" IndRef"+IndRef+" IndRefType"+IndRefType;	
+							log.TraceLog(pgm,message);
 					   	    InetAddress IPAddress = InetAddress.getByName(CommandServer.GetStationIPAddress(STID));
 							SendFrame sendCmd = new SendFrame();
 							byte[] data = new byte[6];
