@@ -114,14 +114,6 @@ final class ThermostatDispatcher {
 				if  (newFrame.toAcknoledge()){
 					SendFrame.AcknoledgeFrame(IPSource,IPport,newFrame.frameNumber(),newFrame.command());
 				}
-				/*
-				for (i=0;i<newFrame.frameLen;i++)
-					{
-					System.out.print("0x"+byteToHex(newFrame.data[i])+"-");
-					}
-				System.out.println();
-				*/
-	//			System.out.println(" group " + newFrame.unitGroup()+" Id "+newFrame.unitId() +" data0:"+newFrame.data[0]+" cmd:"+newFrame.data[3]);
 				if(!meteoFlag[newFrame.unitGroup()])
 				{
 					KeepUpToDateMeteo meteo = new KeepUpToDateMeteo(newFrame.unitGroup());
@@ -129,8 +121,7 @@ final class ThermostatDispatcher {
 
 				}
 				byte command=newFrame.command();
-				if(newFrame.request()){					
-//					System.out.println(" request:" + command);			
+				if(newFrame.request()){						
 					switch (command)
 					{
 						case timeUpdateRequest:  // request time
@@ -152,38 +143,32 @@ final class ThermostatDispatcher {
 					}
 				}
 				else {
-	//				System.out.println(" response:" + command);		
 					switch (command)
 					{
 	
 						case statusResponse:  // request time
 						{
-			//				System.out.println(" status");
 							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
 							break;
 						}
 						case temperatureListResponse:  // 
 						{
-//							System.out.println(" temperatures");
 							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
 							break;
 						}
 						case registersResponse:  // 
 						{
-	//						System.out.println(" registersResponse");
 							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
 							break;
 						}
 						case unitaryScheduleResponse:  // 
 						{
-		//					System.out.println(" unitaryScheduleResponse");
 							int shift=firstScheduleIndicatorPosition;
 							database.InsertIndicator(newFrame.stationId(),newFrame.command(),shift,newFrame.data());
 							break;
 						}	
 						case sendPIDResponse:  // 
 						{
-	//						System.out.println(" PID data");
 							database.InsertPID(newFrame.stationId(),newFrame.data());
 							break;
 						}	
@@ -268,7 +253,6 @@ final class ThermostatDispatcher {
 	}
 		public byte[] BuildFrameOut(boolean requestResponse,boolean toBeAck, byte command, byte inputdata[], int dataLen){
 				currentSentFrameNumber++;
-//				System.out.println(" build frame:"+currentSentFrameNumber);
 				System.arraycopy(inputdata, 0, outFrame, outHeaderLen, dataLen);
 				outFrame[0]=(byte) ((currentSentFrameNumber)%256);
 				outFrame[1]=padByte;
@@ -295,7 +279,6 @@ final class ThermostatDispatcher {
 				this.frameLen=dataLen+10;  // reserved for 0x00 +crc
 				System.arraycopy(outFrame, outHeaderLen-1, this.outData, 0, dataLen+1);
 				outFrame[frameLen-1]=Crc8(outData,dataLen+1);
-//				System.out.println("Crc out:0x" +byteToHex(Crc8(outData,dataLen+1))+" datalen:"+dataLen);
 				return this.outFrame;
 		}
 		public int FrameOutLen()
@@ -322,7 +305,6 @@ final class ThermostatDispatcher {
 	    byte crc = 0x00;
 	    while (len-- > 0) {
 	        byte extract = (byte) stringData[i++];	        
-//	        System.out.print("0x"+byteToHex(extract)+"-");
 	        for (byte tempI = 8; tempI != 0; tempI--) {
 	            byte sum = (byte) ((crc & 0xFF) ^ (extract & 0xFF));
 	            sum = (byte) ((sum & 0xFF) & 0x01); // I had Problems writing this as one line with previous
@@ -333,7 +315,6 @@ final class ThermostatDispatcher {
 	            extract = (byte) ((extract & 0xFF) >>> 1);
 	        }
 	    }
-	//    System.out.println();
 	    return (byte) (crc & 0xFF);
 	}
 

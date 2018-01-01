@@ -73,14 +73,6 @@ public void run(){
 		try {
 			serverSocket.receive(receivePacket);
 			int i=0;
-			/*
-			for (i=0;i<receiveData.length;i++)
-			{
-				System.out.print(byteToHex(receiveData[i])+" ");
-			}
-			System.out.println();
-			System.out.println("check:"+CheckInputFrame(receiveData));
-			*/
 			byte[] inData = new byte[512];
 			int startIdx=6;
 			i=0;
@@ -112,10 +104,8 @@ public void run(){
 					while(receiveData[i+startIdx]!=separator && i< receiveData.length)
 					{
 						inData[i]=(byte) (receiveData[i+startIdx]);
-	//					System.out.print(" "+i+">"+byteToHex(inData[i]));
 						i++;
 					}
-	//				System.out.println(i);
 					int cmdLen=i;
 					byte[] cmd = new byte[cmdLen];
 					System.arraycopy(inData, 0, cmd, 0, cmdLen);
@@ -126,10 +116,8 @@ public void run(){
 					while(receiveData[i+startIdx]!=separator && i< receiveData.length)
 					{
 						inData[i]=(byte) (receiveData[i+startIdx]);
-//						System.out.print(" "+i+">"+byteToHex(inData[i]));
 						i++;
 					}
-//					System.out.println(i);
 					int dataLen=i;
 					byte[] data = new byte[dataLen];
 					System.arraycopy(inData, 0, data, 0, dataLen);

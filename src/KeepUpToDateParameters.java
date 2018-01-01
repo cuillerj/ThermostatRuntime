@@ -9,9 +9,9 @@ import java.sql.Statement;
 
 public class KeepUpToDateParameters extends Thread{
 	public static String pgm="KeepUpToDateParameters";
-	public String connectionUrl = "jdbc:mysql://jserver:3306/domotiquedata";
-	public String connectionUser = "jean";
-	public String connectionPassword = "manu7890";
+	String connectionUrl = GetSqlConnection.GetDomotiqueDB();
+	String connectionUser = GetSqlConnection.GetUser();
+	String connectionPassword = GetSqlConnection.GetPass();
 	public Connection conn = null;
 	public int STID;
 	public KeepUpToDateParameters(int stid) {
@@ -46,13 +46,12 @@ public class KeepUpToDateParameters extends Thread{
 		while(true)
 		{
 
-
 		try {
 		    java.util.Date today = new java.util.Date();
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
-			String connectionUrl = "jdbc:mysql://jserver.home:3306/domotiquedata";
-			String connectionUser = "jean";
-			String connectionPassword = "manu7890";
+			String connectionUrl = GetSqlConnection.GetDomotiqueDB();
+			String connectionUser = GetSqlConnection.GetUser();
+			String connectionPassword = GetSqlConnection.GetPass();
 			conn = DriverManager.getConnection(connectionUrl, connectionUser, connectionPassword);
 			Statement stmt1 = null;
 			Statement stmt2 = null;
@@ -73,12 +72,12 @@ public class KeepUpToDateParameters extends Thread{
 				while (rs2.next()) {
 					int IndValue= rs2.getInt("ind_value");
 
-					if (IndTargetS != null) // modif du test le 13/09/14 replace 0 by null
+					if (IndTargetS != null) // 
 					{
 	
 						if (IndTarget != IndValue)
 						{
-		//					System.out.println(today+" maj a faire station:"+STID+" indicateur "+IndIdS+ " valeur:"+IndValue +" target:"+IndTarget+" IndRef"+IndRef+" IndRefType"+IndRefType);
+	
 						    message=today+" maj a faire station:"+STID+" indicateur "+IndIdS+ " valeur:"+IndValue +" target:"+IndTarget+" IndRef"+IndRef+" IndRefType"+IndRefType;	
 							log.TraceLog(pgm,message);
 					   	    InetAddress IPAddress = InetAddress.getByName(CommandServer.GetStationIPAddress(STID));
@@ -99,18 +98,16 @@ public class KeepUpToDateParameters extends Thread{
 					}
 				}
 				 rs2.close();
-	
 		}
 			rs1.close();
 			conn.close();
 			Thread.sleep(60000);
-	}
-		
+	}	
 		catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 
-	//		try { if (conn2 != null) conn2.close(); } catch (SQLException e) { e.printStackTrace(); }
+
 		}
 		
 	    }

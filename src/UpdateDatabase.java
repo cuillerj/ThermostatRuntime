@@ -6,11 +6,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
 public class UpdateDatabase extends Thread{
 	public static String pgm="UpdateDatabase";
-	public String connectionUrl = "jdbc:mysql://jserver:3306/domotiquedata";
-	public String connectionUser = "jean";
-	public String connectionPassword = "manu7890";
+	String connectionUrl = GetSqlConnection.GetDomotiqueDB();
+	String connectionUser = GetSqlConnection.GetUser();
+	String connectionPassword = GetSqlConnection.GetPass();
 	public Connection conn = null;
 	public UpdateDatabase() {
 	String message="";
@@ -18,7 +19,6 @@ public class UpdateDatabase extends Thread{
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			try {
 				conn = DriverManager.getConnection(connectionUrl, connectionUser, connectionPassword);
-	//			System.out.println("Database connexion Ok");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				TraceLog log = new TraceLog();
@@ -90,8 +90,6 @@ public class UpdateDatabase extends Thread{
 					IndValue=oct0;
 				}				
 				String sql="INSERT INTO IndValue VALUES ("+stationId+","+IndValue+",now(),"+intIdI+")";
-//				System.out.println("ind id "+IndIdS+", pos " + IndPos + ", len: " + IndLen+" value"+IndValue);
-//				System.out.println(sql);
 				stmtInsert.executeUpdate(sql);
 			}	
 			rs.close();
@@ -113,7 +111,6 @@ public class UpdateDatabase extends Thread{
 		int indId=(byte)(data[4]&0x7F)-(byte)(data[4]&0x80);
 		indId=indId+shiftPosition;
 		String rule1="256*a+b";
-	//	System.out.println("1:"+stationId+" "+indType+" id:"+indId);
 		int IndValue=0;
 		try {
 			Statement stmtRead = conn.createStatement();
@@ -129,7 +126,6 @@ public class UpdateDatabase extends Thread{
 				String IndComputeRule = rs.getString("ind_compute_rule");
 				if (iLen==2)
 				{
-//					System.out.println("compute rule: "+IndComputeRule+ " len:"+IndComputeRule.length());
 					int lg=IndComputeRule.length();
 
 					if (IndComputeRule.equals (rule1)) //
@@ -151,9 +147,6 @@ public class UpdateDatabase extends Thread{
 					IndValue=oct0;
 				}
 				String sql="INSERT INTO IndValue VALUES ("+stationId+","+IndValue+",now(),"+iId+")";
-
-	//			System.out.println("ind id "+IndIdS+", pos " + IndPos + ", len: " + IndLen+" value"+IndValue);
-	//			System.out.println(sql);
 				stmtInsert.executeUpdate(sql);
 				log.TraceLog(pgm,sql);
 			}	
@@ -167,8 +160,6 @@ public class UpdateDatabase extends Thread{
 
 public  void InsertPID(int stationId, byte[] data) 
 {	
-
-//	System.out.println("1:"+stationId);
 	int iPos=4;
 	int relayStatus=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
 	iPos=6;

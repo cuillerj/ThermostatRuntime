@@ -74,7 +74,6 @@ public class SendFrame extends Thread{
 		TimeToSend[7]=(byte)TimS;
 		ThermostatDispatcher.FrameOut newFrame = new ThermostatDispatcher.FrameOut();
 		byte[] dataToSend =  newFrame.BuildFrameOut(ThermostatDispatcher.response,ThermostatDispatcher.noAck, ThermostatDispatcher.respTime,TimeToSend, timeLen) ;
-//		System.arraycopy(TimeToSend, 0, dataToSend, 8, 8);	
 		DatagramPacket sendPacket2 = new DatagramPacket(dataToSend, newFrame.FrameOutLen(), IPAddress, IPport);
 		try {
 			clientSocket.send(sendPacket2);
@@ -91,7 +90,6 @@ public class SendFrame extends Thread{
 	}
 	public  void SendExtTemp (InetAddress IPAddress, int IPport,int meteoId) 
 	{
-//		System.out.println(" send ext temp to" + IPAddress);
 		TraceLog log = new TraceLog();
 		String message=" send ext temp to" + IPAddress;
 		log.TraceLog(pgm,message);
@@ -115,7 +113,6 @@ public class SendFrame extends Thread{
 
 		ThermostatDispatcher.FrameOut newFrame = new ThermostatDispatcher.FrameOut();
 		byte[] dataToSend =  newFrame.BuildFrameOut(ThermostatDispatcher.response,ThermostatDispatcher.noAck, ThermostatDispatcher.respExtTemp,tempToSend, tempLen) ;
-//		System.arraycopy(TimeToSend, 0, dataToSend, 8, 8);	
 		DatagramPacket sendPacket2 = new DatagramPacket(dataToSend, newFrame.FrameOutLen(), IPAddress, IPport);
 		try {
 			clientSocket.send(sendPacket2);
