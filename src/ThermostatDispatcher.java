@@ -146,7 +146,7 @@ final class ThermostatDispatcher {
 					switch (command)
 					{
 	
-						case statusResponse:  // request time
+						case statusResponse:  // 
 						{
 							database.InsertIndicators(newFrame.stationId(),newFrame.command(),newFrame.data());
 							break;
