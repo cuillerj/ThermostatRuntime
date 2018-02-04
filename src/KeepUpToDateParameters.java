@@ -30,7 +30,7 @@ public class KeepUpToDateParameters extends Thread{
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			try {
 				conn = DriverManager.getConnection(connectionUrl, connectionUser, connectionPassword);
-				message="start KeepUpToDateParameters v1.0 for station :"+STID;
+				message="start KeepUpToDateParameters v1.1 for station :"+STID;
 				log.TraceLog(pgm,message);
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
@@ -101,7 +101,7 @@ public class KeepUpToDateParameters extends Thread{
 		}
 			rs1.close();
 			conn.close();
-			Thread.sleep(60000);
+
 	}	
 		catch (Exception e) {
 			e.printStackTrace();
@@ -109,7 +109,12 @@ public class KeepUpToDateParameters extends Thread{
 
 
 		}
-		
+		try {
+			Thread.sleep(60000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	    }
 	
 	}

@@ -67,7 +67,7 @@ final class ThermostatDispatcher {
 	{  
 		String message="";
 		TraceLog log = new TraceLog();
-		message="ThermostatDispatcher V1.0";
+		message="ThermostatDispatcher V1.1";
 		log.TraceLog(pgm,message);
 		boolean running=true;
 		int listenIPPort = 0;
@@ -97,8 +97,9 @@ final class ThermostatDispatcher {
 		UpdateDatabase database = new UpdateDatabase();
 		database.start();
 		CommandServer commandServer = new CommandServer();
-
+		MonitorWaterTemperatures monitorWaterTemp = new MonitorWaterTemperatures();
 		commandServer.start();
+		monitorWaterTemp.start();
 		while(running)
 		{
 			byte[] receiveData = new byte[1024];

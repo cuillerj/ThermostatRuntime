@@ -24,7 +24,7 @@ public class KeepUpToDateMeteo extends Thread{
 	public void run() 
 	{
 		TraceLog log = new TraceLog();
-		String message="KeepUpToDateMeteo V1.0";
+		String message="KeepUpToDateMeteo V1.1";
 		log.TraceLog(pgm,message);
 		
 		while(true)
@@ -57,7 +57,7 @@ public class KeepUpToDateMeteo extends Thread{
 				{
 					ThermostatDispatcher.meteoValue[meteoId]=ThermostatDispatcher.nonDefinedExtTemp;
 				}
-				Thread.sleep(300*1000);		
+	
 			}
 			catch (Exception e) {
 				e.printStackTrace();
@@ -66,6 +66,12 @@ public class KeepUpToDateMeteo extends Thread{
 				try { if (stmt1 != null) stmt1.close(); } catch (SQLException e) { e.printStackTrace(); }
 				try { if (conn1 != null) conn1.close(); } catch (SQLException e) { e.printStackTrace(); }
 			}
+			try {
+				Thread.sleep(300*1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
 	}
 
 	}
