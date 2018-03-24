@@ -91,8 +91,7 @@ public class SendFrame extends Thread{
 	public  void SendExtTemp (InetAddress IPAddress, int IPport,int meteoId) 
 	{
 		TraceLog log = new TraceLog();
-		String message=" send ext temp to" + IPAddress;
-		log.TraceLog(pgm,message);
+
 		DatagramSocket clientSocket = null;
 		try {
 			clientSocket = new DatagramSocket();
@@ -108,9 +107,9 @@ public class SendFrame extends Thread{
 		else{
 			tempToSend[0]=0x2d;					
 		}
-		tempToSend[1]=(byte)ThermostatDispatcher.meteoValue[meteoId];
-		
-
+		tempToSend[1]=(byte)Math.abs(ThermostatDispatcher.meteoValue[meteoId]);
+		String message=" send ext temp to" + IPAddress+ " "+tempToSend[0]+ " "+ThermostatDispatcher.meteoValue[meteoId];
+		log.TraceLog(pgm,message);
 		ThermostatDispatcher.FrameOut newFrame = new ThermostatDispatcher.FrameOut();
 		byte[] dataToSend =  newFrame.BuildFrameOut(ThermostatDispatcher.response,ThermostatDispatcher.noAck, ThermostatDispatcher.respExtTemp,tempToSend, tempLen) ;
 		DatagramPacket sendPacket2 = new DatagramPacket(dataToSend, newFrame.FrameOutLen(), IPAddress, IPport);
