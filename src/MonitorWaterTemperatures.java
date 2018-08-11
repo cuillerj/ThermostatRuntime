@@ -64,7 +64,7 @@ public class MonitorWaterTemperatures extends Thread{
 		Thread.currentThread();
 		TraceLog log = new TraceLog();
 		String message="";
-		message="MonitorWaterTemperatures V1.2";
+		message="MonitorWaterTemperatures V1.3";
 		log.TraceLog(pgm,message);
 		while(true)
 		{
@@ -102,6 +102,33 @@ public class MonitorWaterTemperatures extends Thread{
 							inShift= rs1.getInt("ind_target");
 						}
 						rs1.close();
+						rs1 = stmt1.executeQuery("SELECT ind_target FROM IndDesc "
+								+ "WHERE  st_id="+boilerId+" and ind_desc = 'coefA' limit 1"); // 
+						while (rs1.next()) {
+							coefA= rs1.getInt("ind_target");
+							coefA=coefA/100;
+						}
+						rs1.close();
+						rs1 = stmt1.executeQuery("SELECT ind_target FROM IndDesc "
+								+ "WHERE  st_id="+boilerId+" and ind_desc = 'coefB' limit 1"); // 
+						while (rs1.next()) {
+							coefB= rs1.getInt("ind_target");
+						}
+						rs1.close();
+						rs1 = stmt1.executeQuery("SELECT ind_target FROM IndDesc "
+								+ "WHERE  st_id="+boilerId+" and ind_desc = 'minReactivity' limit 1"); // 
+						while (rs1.next()) {
+							minReactivity= rs1.getInt("ind_target");
+						}
+						rs1.close();
+						rs1 = stmt1.executeQuery("SELECT ind_target FROM IndDesc "
+								+ "WHERE  st_id="+boilerId+" and ind_desc = 'maxReactivity' limit 1"); // 
+						while (rs1.next()) {
+							maxReactivity= rs1.getInt("ind_target");
+						}
+						rs1.close();
+						mess="boiler outShift:"+outShift+" inShift:"+inShift+ " coefA:"+coefA+ " coefB:"+coefB+ " minReactivity:"+minReactivity +" maxReactivity:"+maxReactivity;
+						log.TraceLog(pgm,mess);
 						rs1 = stmt1.executeQuery("SELECT * FROM IndDesc "
 								+ "WHERE  st_id="+thermostatId+" and ind_desc = 'reactivity' limit 1"); // 
 						while (rs1.next()) {
@@ -118,8 +145,7 @@ public class MonitorWaterTemperatures extends Thread{
 							mess=mess+" InTempAlarmThreshold:"+InTempAlarmThreshold;
 						}
 						rs1.close();					
-						
-						
+											
 						rs1 = stmt1.executeQuery("SELECT MAX(mesrument_value) as MaxOut FROM value_mesurment WHERE mesurment_ind_id = "+waterOutIndId+" AND mesurment_st_id = "+waterId+" AND mesurment_time > CURRENT_TIMESTAMP - INTERVAL 12 HOUR");
 						int maxOutTemp12=0;
 						while (rs1.next()) {
@@ -187,7 +213,7 @@ public class MonitorWaterTemperatures extends Thread{
 						if (maxOutTemp!=0)
 						{
 								maxOutTemp=maxOutTemp+outShift;
-								if (Math.abs(maxOutTemp-maxOut)>=2)
+								if (Math.abs(maxOutTemp-maxOut)>=1)
 								{
 									maxOut=maxOutTemp;
 									Statement stmtInsert1 = null;
@@ -200,20 +226,21 @@ public class MonitorWaterTemperatures extends Thread{
 									sql="INSERT INTO IndValue VALUES ("+boilerId+","+maxOut+",now(),"+outTempIndId+")";
 									stmtInsert1.executeUpdate(sql);
 									log.TraceLog(pgm,sql);
-									float tempReactivity=coefA*maxOut+coefB;
-									mess="computed tempReactivity:"+tempReactivity;
-									if (tempReactivity <=maxReactivity && tempReactivity >=minReactivity && Math.abs(tempReactivity-reactivity) >=2)
-									{
-										Statement stmtUpdate = null;
-										stmtUpdate = conn.createStatement();
-										mess="update reactivity:"+reactivity+ " new value:"+tempReactivity;
-										reactivity= (int) Math.round(tempReactivity);
-										sql = "UPDATE IndDesc " +
-								                   "SET ind_target = "+reactivity+"  WHERE st_id = "+thermostatId+" AND ind_id = "+reactivityInd+"";
-										stmtUpdate.executeUpdate(sql);
-										log.TraceLog(pgm,sql);
-									}
 								}
+								float tempReactivity=coefA*maxOut+coefB;
+								mess="computed tempReactivity:"+tempReactivity;
+								if (tempReactivity <=maxReactivity && tempReactivity >=minReactivity && Math.abs(tempReactivity-reactivity) >=2)
+								{
+									Statement stmtUpdate = null;
+									stmtUpdate = conn.createStatement();
+									mess="update reactivity:"+reactivity+ " new value:"+tempReactivity;
+									reactivity= (int) Math.round(tempReactivity);
+									String sql = "UPDATE IndDesc " +
+								                  "SET ind_target = "+reactivity+"  WHERE st_id = "+thermostatId+" AND ind_id = "+reactivityInd+"";
+									stmtUpdate.executeUpdate(sql);
+									log.TraceLog(pgm,sql);
+								}
+
 						}	
 						
 						rs1 = stmt1.executeQuery("SELECT  count(mesrument_value) as number FROM value_mesurment "

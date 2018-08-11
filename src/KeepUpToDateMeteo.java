@@ -46,10 +46,10 @@ public class KeepUpToDateMeteo extends Thread{
 				boolean recFound=false;
 			rs1 = stmt1.executeQuery("SELECT * FROM "+meteoTable+" WHERE st_id ="+meteoId+" ORDER by rec_id DESC limit 1"); // modif le 10/09/14 pour integration seb
 			while (rs1.next()) {
-				ThermostatDispatcher.meteoValue[meteoId]=rs1.getInt("temp");
+				ThermostatDispatcher.meteoValue[meteoId]=rs1.getInt("tempS");
 				String tempSign=rs1.getString("tempSign");
 				recFound=true;
-				message="Meteo Station: "+ meteoId+":"+ThermostatDispatcher.meteoValue[meteoId];
+				message="Meteo Station:"+ meteoId+":"+ThermostatDispatcher.meteoValue[meteoId];
 				log.TraceLog(pgm,message);
 				ThermostatDispatcher.meteoFlag[meteoId]=true;
 					}
