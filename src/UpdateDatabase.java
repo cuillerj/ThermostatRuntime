@@ -12,7 +12,7 @@ public class UpdateDatabase extends Thread{
 	String connectionUrl = GetSqlConnection.GetDomotiqueDB();
 	String connectionUser = GetSqlConnection.GetUser();
 	String connectionPassword = GetSqlConnection.GetPass();
-	public Connection conn = null;
+	public static Connection conn = null;
 	public UpdateDatabase() {
 	String message="";
 		try {
@@ -38,11 +38,17 @@ public class UpdateDatabase extends Thread{
 	{
 		TraceLog log = new TraceLog();
 		String message="";
-		message="UpdateDatabase V1.0";
+		message="UpdateDatabase V1.1";
 		log.TraceLog(pgm,message);
 		while(true)
 		{
 			Thread.currentThread();
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	public  void InsertIndicators (int stationId, int indType, byte[] data) 
@@ -93,9 +99,9 @@ public class UpdateDatabase extends Thread{
 				stmtInsert.executeUpdate(sql);
 			}	
 			rs.close();
-			if (!ThermostatDispatcher.upToDateFlag[stationId] && stationId<=ThermostatDispatcher.maximumNumberOfStation)
+			if (!Dispatcher.upToDateFlag[stationId] && stationId<=Dispatcher.maximumNumberOfStation)
 			{
-				ThermostatDispatcher.upToDateFlag[stationId]=true;
+				Dispatcher.upToDateFlag[stationId]=true;
 				KeepUpToDateParameters upToDateParamters = new KeepUpToDateParameters(stationId);
 				upToDateParamters.start();
 			}
@@ -157,48 +163,33 @@ public class UpdateDatabase extends Thread{
 			e.printStackTrace();
 		}
 	}
-
-public  void InsertPID(int stationId, byte[] data) 
-{	
-	int iPos=4;
-	int relayStatus=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=6;
-	int tempInstruction=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=7;
-	int AverageTemp=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=9;
-	int oct0=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // manip car byte consideré signé
-	int oct1=(byte)(data[iPos+1]&0x7F)-(byte)(data[iPos+1]&0x80);
-	int windowSize=256*oct0+oct1;
-	if(data[iPos-1]==0x2d)
+	public static  void InsertDoorSystemAction (int stationId, String doorAction, String doorType, String doorUser, String doorUserIP, int doorRetcode) 
 	{
-		windowSize=-windowSize;
-	}
-	iPos=12;
-	int PIDCycle=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=14;
-	int data1=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=16;
-	int data2=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=18;
-	int data3=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=20;
-	int data4=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=22;
-	int data5=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-	iPos=24;
-	int data6=(byte)(data[iPos]&0x7F)-(byte)(data[iPos]&0x80); // 
-
-	try {
-		Statement stmtRead = conn.createStatement();
-		Statement stmtInsert = conn.createStatement();
-		String sql="INSERT INTO PIDData VALUES (now(),"+stationId+","+relayStatus+","+tempInstruction+","+AverageTemp+","+windowSize+","+PIDCycle+","+data1+","+data2+","+data3+","+data4+","+data5+","+data6+")";
-		stmtInsert.executeUpdate(sql);
-	
-	} catch (SQLException e) {
-		// TODO Auto-generated catch block
-
-		e.printStackTrace();
-	}
+		TraceLog log = new TraceLog();
+		try {
+	//		Statement stmtInsert = conn.createStatement();
+			PreparedStatement st = conn.prepareStatement("insert into doorSystem values(now(),?,?,?,?,?,?)"); 
+	  
+	            // For the first parameter, 
+	            // get the data using request object 
+	            // sets the data to st pointer 
+	            st.setInt(1, stationId); 
+	            st.setString(2, doorAction); 
+	            st.setString(3, doorType); 
+	            st.setString(4, doorUser); 
+	            st.setString(5, doorUserIP); 
+	            st.setInt(6, doorRetcode); 
+	            // Execute the insert command using executeUpdate() 
+	            // to make changes in database 
+	            st.executeUpdate(); 
+	            // Close all the connections 
+	            st.close(); 
+	//		String sql="INSERT INTO doorSystem VALUES (now(),"+stationId+",+doorAction+,"doorType","doorType","doorType","+doorRetcode+")";
+		//	log.TraceLog(pgm,st); 
+		//	stmtInsert.executeUpdate(sql);
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 }

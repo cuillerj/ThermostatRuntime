@@ -72,8 +72,8 @@ public class SendFrame extends Thread{
 		TimeToSend[5]=0x00;	
 		TimeToSend[6]=(byte)TimM;
 		TimeToSend[7]=(byte)TimS;
-		ThermostatDispatcher.FrameOut newFrame = new ThermostatDispatcher.FrameOut();
-		byte[] dataToSend =  newFrame.BuildFrameOut(ThermostatDispatcher.response,ThermostatDispatcher.noAck, ThermostatDispatcher.respTime,TimeToSend, timeLen) ;
+		Dispatcher.FrameOut newFrame = new Dispatcher.FrameOut();
+		byte[] dataToSend =  newFrame.BuildFrameOut(Dispatcher.response,Dispatcher.noAck, Dispatcher.respTime,TimeToSend, timeLen) ;
 		DatagramPacket sendPacket2 = new DatagramPacket(dataToSend, newFrame.FrameOutLen(), IPAddress, IPport);
 		try {
 			clientSocket.send(sendPacket2);
@@ -101,17 +101,17 @@ public class SendFrame extends Thread{
 		}
 		int tempLen=6;
 		byte[] tempToSend = new byte[tempLen];
-		if(ThermostatDispatcher.meteoValue[meteoId]>=0){
+		if(Dispatcher.meteoValue[meteoId]>=0){
 			tempToSend[0]=0x2b;		
 		}
 		else{
 			tempToSend[0]=0x2d;					
 		}
-		tempToSend[1]=(byte)Math.abs(ThermostatDispatcher.meteoValue[meteoId]);
-		String message=" send ext temp to" + IPAddress+ " "+tempToSend[0]+ " "+ThermostatDispatcher.meteoValue[meteoId];
+		tempToSend[1]=(byte)Math.abs(Dispatcher.meteoValue[meteoId]);
+		String message=" send ext temp to" + IPAddress+ " "+tempToSend[0]+ " "+Dispatcher.meteoValue[meteoId];
 		log.TraceLog(pgm,message);
-		ThermostatDispatcher.FrameOut newFrame = new ThermostatDispatcher.FrameOut();
-		byte[] dataToSend =  newFrame.BuildFrameOut(ThermostatDispatcher.response,ThermostatDispatcher.noAck, ThermostatDispatcher.respExtTemp,tempToSend, tempLen) ;
+		Dispatcher.FrameOut newFrame = new Dispatcher.FrameOut();
+		byte[] dataToSend =  newFrame.BuildFrameOut(Dispatcher.response,Dispatcher.noAck, Dispatcher.respExtTemp,tempToSend, tempLen) ;
 		DatagramPacket sendPacket2 = new DatagramPacket(dataToSend, newFrame.FrameOutLen(), IPAddress, IPport);
 		try {
 			clientSocket.send(sendPacket2);
@@ -144,8 +144,8 @@ public class SendFrame extends Thread{
 		}
 		int dLen=data.length;
 
-		ThermostatDispatcher.FrameOut newFrame = new ThermostatDispatcher.FrameOut();
-		byte[] dataToSend =  newFrame.BuildFrameOut(ThermostatDispatcher.request,ThermostatDispatcher.toAck, command,data, dLen) ;
+		Dispatcher.FrameOut newFrame = new Dispatcher.FrameOut();
+		byte[] dataToSend =  newFrame.BuildFrameOut(Dispatcher.request,Dispatcher.toAck, command,data, dLen) ;
 		DatagramPacket sendPacket2 = new DatagramPacket(dataToSend, newFrame.FrameOutLen(), IPAddress, IPport);
 		try {
 			clientSocket.send(sendPacket2);
@@ -164,7 +164,7 @@ public class SendFrame extends Thread{
 	}
 	public static void AcknoledgeFrame(InetAddress IPAddress,int IPport, byte frameNumber, byte command)
 	{
-		ThermostatDispatcher.FrameOutAck newFrame = new ThermostatDispatcher.FrameOutAck();
+		Dispatcher.FrameOutAck newFrame = new Dispatcher.FrameOutAck();
 		  byte[] dataToSend =  newFrame.BuildFrameOutAck(frameNumber, command) ;
 	      DatagramSocket clientSocket = null;
 			try {

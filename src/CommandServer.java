@@ -22,43 +22,31 @@ import java.sql.Statement;
 public class CommandServer extends Thread{
 	public static String pgm="CommandServer";
 	final byte byte0=0x01;
-	final byte byte1=ThermostatDispatcher.padByte;
+	final byte byte1=Dispatcher.padByte;
 	final byte byte2=0x00;
-	final byte byte3=ThermostatDispatcher.padByte;	
+	final byte byte3=Dispatcher.padByte;	
 	final byte separator=0x2f;
 	final byte equalChar=0x3a;
-	final byte commandNumber=13;
+	final byte commandNumber=4;
 	final String[] commandS = new String[commandNumber];
-	final static byte[] commandB={ThermostatDispatcher.setModeRequest,ThermostatDispatcher.setInstructionRequest,ThermostatDispatcher.setSecurityRequest,
-			ThermostatDispatcher.updateTemperatureRequest,ThermostatDispatcher.updateRegisterRequest,ThermostatDispatcher.updateSchedulRequest,
-			ThermostatDispatcher.writeEepromRequest,ThermostatDispatcher.setTemporarilyHoldRequest,ThermostatDispatcher.uploadScheduleRequest,
-			ThermostatDispatcher.uploadTemperatures,ThermostatDispatcher.uploadRegisters,ThermostatDispatcher.tracePIDRequest,ThermostatDispatcher.setInstruction};
-	final static int[] paramNumber={1,1,1,2,2,2,1,1,0,0,0,1,1};  
-	final int[] paramLen={1,1,1,2,2,2,1,1,0,0,0,1,1};
+	final static byte[] commandB={Dispatcher.statusRequest,Dispatcher.ring,Dispatcher.open,Dispatcher.statusRequest};
+	final static int[] paramNumber={0,0,0,0};  
+	final int[] paramLen={0,0,0,0};
 
 public void run(){
-	commandS[0]="setMode";
-	commandS[1]="setTemp";
-	commandS[2]="setSecurity";
-	commandS[3]="updateTemperature";
-	commandS[4]="updateRegister";
-	commandS[5]="updateSchedul";
-	commandS[6]="writeEeprom";
-	commandS[7]="temporarilyHold";
-	commandS[8]="uploadSchedule";
-	commandS[9]="uploadTemperatures";
-	commandS[10]="uploadRegisters";
-	commandS[11]="tracePID";
-	commandS[12]="setInstruction";
+	commandS[0]="statusRequest";
+	commandS[1]="ring";
+	commandS[2]="open";
+	commandS[3]="status";
 	String message="";
-	message="CommandServer V1.0";
+	message="DoorSystem CommandServer V1.2";
 	TraceLog log = new TraceLog();
 	log.TraceLog(pgm,message);
-//	System.out.println("CommandServer V1.0");
+
 		DatagramSocket serverSocket = null;
 		try {
-			serverSocket = new DatagramSocket(ThermostatDispatcher.commandListenIPPort);
-			message="Listen port:"+ThermostatDispatcher.commandListenIPPort;
+			serverSocket = new DatagramSocket(Dispatcher.commandListenIPPort);
+			message="Listen port:"+Dispatcher.commandListenIPPort;
 			log.TraceLog(pgm,message);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
@@ -124,7 +112,7 @@ public void run(){
 					String datas = new String(data, "UTF-8"); // for UTF-8 encoding
 					message="dest station:"+st_id+" "+GetStationIPAddress(st_id)+"/"+GetStationIPPort(st_id);
 					log.TraceLog(pgm,message);
-					message="cmd:"+command+" len:"+cmd.length+ " data:"+datas+" datalen"+data.length;
+					message="cmd:"+command+" len:"+cmd.length+ " data:"+datas+" datalen:"+data.length;
 					log.TraceLog(pgm,message);
 					int j=0;
 
@@ -141,12 +129,13 @@ public void run(){
 					}
 					if (cmdIdx!=-1)    // if command is defined
 					{
-						if(paramNumber[cmdIdx]==0) // if only one parameter
+						if(paramNumber[cmdIdx]==0) // if no parameter
 						{	
 								byte[] dataB = new byte[6];					
 						   	    InetAddress IPAddress = InetAddress.getByName(GetStationIPAddress(st_id));
 								SendFrame sendCmd = new SendFrame();
-								sendCmd.SendExtCommand(IPAddress, GetStationIPPort(st_id),cmdB,dataB);								
+								sendCmd.SendExtCommand(IPAddress, GetStationIPPort(st_id),cmdB,dataB);	
+								UpdateDatabase.InsertDoorSystemAction(0,commandS[cmdIdx],"Web"," "," ",0);
 						}
 						if(paramNumber[cmdIdx]==1) // if only one parameter
 						{	
